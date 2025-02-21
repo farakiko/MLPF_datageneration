@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-import os, sys, subprocess
-import glob
 import argparse
+import glob
+import os
+import subprocess
+import sys
 import time
 
 # ____________________________________________________________________________________________________________
@@ -30,6 +32,12 @@ def main():
         "--config",
         help="gun config file (has to be in gun/ directory) ",
         default="config.gun",
+    )
+    
+    parser.add_argument(
+        "--sample",
+        help="gun / p8_ee_tt_ecm365",
+        default="gun",
     )
 
     parser.add_argument(
@@ -64,6 +72,7 @@ def main():
     outdir = os.path.abspath(args.outdir)
     condor_dir = os.path.abspath(args.condordir)
     config = args.config
+    sample = args.sample
     njobs = int(args.njobs)
     nev = args.nev
     queue = args.queue
@@ -105,8 +114,8 @@ log                   = std/condor.$(ClusterId).log
             print("{} : missing output file ".format(outputFile))
             jobCount += 1
 
-            argts = "{} {} {} {} {} {}".format(
-                homedir, config, nev, seed, outdir, condor_dir
+            argts = "{} {} {} {} {} {} {}".format(
+                homedir, config, nev, seed, outdir, condor_dir, sample
             )
 
             cmdfile += 'arguments="{}"\n'.format(argts)
@@ -117,14 +126,14 @@ log                   = std/condor.$(ClusterId).log
                 print("")
                 print(cmd)
 
-    with open("condor_gun.sub", "w") as f:
+    with open("condor_{}.sub".format(sample), "w") as f:
         f.write(cmdfile)
 
     ### submitting jobs
     if jobCount > 0:
         print("")
         print("[Submitting {} jobs] ... ".format(jobCount))
-        os.system("condor_submit condor_gun.sub")
+        os.system("condor_submit condor_{}.sub".format(sample))
 
 
 # _______________________________________________________________________________________
