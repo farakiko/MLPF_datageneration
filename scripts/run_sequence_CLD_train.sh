@@ -1,5 +1,6 @@
 #!/bin/bash
 
+####################################################################################################
 HOMEDIR=${1} # path to where it's ran from e.g. /afs/cern.ch/user/f/fmokhtar/MLPF_datageneration
 GUNCARD=${2}  
 NEV=${3}
@@ -7,13 +8,21 @@ SEED=${4}
 OUTPUTDIR=${5}
 DIR=${6}
 SAMPLE=${7} # can be "gun" or "p8_ee_tt_ecm365"
+CLDGEO=${8} # default is CLD_o2_v06 (CLD+ARC is CLD_o3_v01 https://github.com/key4hep/k4geo/blob/main/FCCee/CLD/compact/CLD_o3_v01/CLD_o3_v01.xml)
+
+if [ -z "$CLDGEO" ]; then
+    echo "Will use default CLD geometry version CLD_o2_v06"
+    CLDGEO=CLD_o2_v06
+else
+    echo "Will use CLD geometry version $CLDGEO"
+fi
+
+PATH_CLDCONFIG=/afs/cern.ch/user/f/fmokhtar/MLPF_datageneration/CLDConfig/CLDConfig
+
+####################################################################################################
 
 mkdir -p ${DIR}/${SEED}
 cd ${DIR}/${SEED}
-
-
-# PATH_CLDCONFIG=/afs/cern.ch/work/m/mgarciam/private/CLD_Config_versions/CLDConfig_030225/CLDConfig/ 
-PATH_CLDCONFIG=/afs/cern.ch/user/f/fmokhtar/MLPF_datageneration/CLDConfig/CLDConfig
 
 
 wrapperfunction() {
@@ -47,7 +56,8 @@ then
 fi
 
 
-ddsim --compactFile $K4GEO/FCCee/CLD/compact/CLD_o2_v06/CLD_o2_v06.xml --outputFile out_sim_edm4hep.root --steeringFile ${PATH_CLDCONFIG}/cld_steer.py --inputFiles events.hepmc --numberOfEvents ${NEV} --random.seed ${SEED}
+
+ddsim --compactFile $K4GEO/FCCee/CLD/compact/$CLDGEO/$CLDGEO.xml --outputFile out_sim_edm4hep.root --steeringFile ${PATH_CLDCONFIG}/cld_steer.py --inputFiles events.hepmc --numberOfEvents ${NEV} --random.seed ${SEED}
 
 # copy large input files via xrootd (recommended)
 xrdcp -r ${PATH_CLDCONFIG}/* .

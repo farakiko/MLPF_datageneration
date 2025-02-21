@@ -30,7 +30,7 @@ def main():
 
     parser.add_argument(
         "--config",
-        help="gun config file (has to be in gun/ directory) ",
+        help="gun config file (has to be in gun/ directory)",
         default="config.gun",
     )
     
@@ -38,6 +38,11 @@ def main():
         "--sample",
         help="gun / p8_ee_tt_ecm365",
         default="gun",
+    )
+    parser.add_argument(
+        "--cldgeo",
+        help="which cld geometry version to use",
+        default="CLD_o2_v06",
     )
 
     parser.add_argument(
@@ -73,6 +78,7 @@ def main():
     condor_dir = os.path.abspath(args.condordir)
     config = args.config
     sample = args.sample
+    cldgeo = args.cldgeo
     njobs = int(args.njobs)
     nev = args.nev
     queue = args.queue
@@ -115,7 +121,7 @@ log                   = std/condor.$(ClusterId).log
             jobCount += 1
 
             argts = "{} {} {} {} {} {} {}".format(
-                homedir, config, nev, seed, outdir, condor_dir, sample
+                homedir, config, nev, seed, outdir, condor_dir, sample, cldgeo
             )
 
             cmdfile += 'arguments="{}"\n'.format(argts)
