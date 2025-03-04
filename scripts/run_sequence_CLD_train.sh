@@ -1,38 +1,35 @@
 #!/bin/bash
 
-####################################################################################################
+##################################### SETUP
 HOMEDIR=${1} # path to where it's ran from e.g. /afs/cern.ch/user/f/fmokhtar/MLPF_datageneration
 GUNCARD=${2}  
 NEV=${3}
 SEED=${4}
 OUTPUTDIR=${5}
-DIR=${6}
+TEMPDIR=${6}
 SAMPLE=${7} # can be "gun" or "p8_ee_tt_ecm365"
 CLDGEO=${8} # default is CLD_o2_v06 (CLD+ARC is CLD_o3_v01 https://github.com/key4hep/k4geo/blob/main/FCCee/CLD/compact/CLD_o3_v01/CLD_o3_v01.xml)
 
 if [ -z "$CLDGEO" ]; then
-    echo "Will use default CLD geometry version CLD_o2_v06"
     CLDGEO=CLD_o2_v06
+    echo "Will use default CLD geometry version $CLDGEO"
 else
     echo "Will use CLD geometry version $CLDGEO"
 fi
 
-PATH_CLDCONFIG=/afs/cern.ch/user/f/fmokhtar/MLPF_datageneration/CLDConfig/CLDConfig
-
-####################################################################################################
-
-mkdir -p ${DIR}/${SEED}
-cd ${DIR}/${SEED}
-
-
+# the following will set $CLDCONFIG and $K4GEO according to the latest stable release
 wrapperfunction() {
     source /cvmfs/sw.hsf.org/key4hep/setup.sh -r 2025-01-28
 }
 wrapperfunction
 
+CLDCONFIG_PATH=$CLDCONFIG/share/CLDConfig   # change if you need to use different version
 
+#####################################
 
-# Build gun 
+mkdir -p ${TEMPDIR}/${SEED}
+cd ${TEMPDIR}/${SEED}
+
 if [[ "${SAMPLE}" == "gun" ]] 
 then 
     cp -r ${HOMEDIR}/gun/gun.cpp .
@@ -57,13 +54,14 @@ fi
 
 
 
-ddsim --compactFile $K4GEO/FCCee/CLD/compact/$CLDGEO/$CLDGEO.xml --outputFile out_sim_edm4hep.root --steeringFile ${PATH_CLDCONFIG}/cld_steer.py --inputFiles events.hepmc --numberOfEvents ${NEV} --random.seed ${SEED}
+ddsim --compactFile $K4GEO/FCCee/CLD/compact/$CLDGEO/$CLDGEO.xml --outputFile out_sim_edm4hep.root --steeringFile ${CLDCONFIG_PATH}/cld_steer.py --inputFiles events.hepmc --numberOfEvents ${NEV} --random.seed ${SEED}
 
 # copy large input files via xrootd (recommended)
-xrdcp -r ${PATH_CLDCONFIG}/* .
+xrdcp -r ${CLDCONFIG_PATH}/* .
 k4run CLDReconstruction.py -n ${NEV}  --inputFiles out_sim_edm4hep.root --outputBasename out_reco
 
 
 
 mkdir -p ${OUTPUTDIR}
-xrdcp ${DIR}/${SEED}/out_reco_REC.edm4hep.root ${OUTPUTDIR}/reco_${SAMPLE}_${SEED}.root
+xrdcp ${TEMPDIR}/${SEED}/out_reco_REC.edm4hep.root ${OUTPUTDIR}/reco_${SAMPLE}_${SEED}.root
+rm -rf ${TEMPDIR}/${SEED}
